@@ -28,12 +28,14 @@ import {
   type MealPlanningContext,
 } from './lib/ai';
 import { seedIndianFoods } from './lib/indianFoodDatabase';
+import UserProfileModal from './components/ui/UserProfileModal';
+import { LocalStorageService } from './lib/localStorage';
 
 type AppState = 'landing' | 'auth' | 'onboarding' | 'main';
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>('main'); // Changed from 'landing' to 'main' for local testing
-  const [user /* setUser */] = useState<UserProfile | null>({
+  const [user, setUser] = useState<UserProfile | null>({
     id: 'local-dev',
     email: 'dev@local.com',
     display_name: 'Local Developer',
@@ -100,7 +102,7 @@ export default function App() {
     carbs: 95,
     fat: 28,
   });
-  const [goals /* setGoals */] = useState({
+  const [goals, setGoals] = useState({
     kcal: 2000,
     protein: 150,
     carbs: 250,
@@ -112,6 +114,7 @@ export default function App() {
   const [showAIMealPlan, setShowAIMealPlan] = useState(false);
   const [isGeneratingAIMealPlan, setIsGeneratingAIMealPlan] = useState(false);
   const [aiMealPlan, setAiMealPlan] = useState<string>('');
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     // Check authentication state
@@ -154,12 +157,29 @@ export default function App() {
     initializeApp();
   }, []);
 
-  const initializeApp = async () => {
+    const initializeApp = async () => {
     try {
+      // Initialize local storage with defaults
+      LocalStorageService.initializeDefaults();
+      
+      // Load user data from local storage
+      const savedUser = LocalStorageService.getUser();
+      const savedGoals = LocalStorageService.getGoals();
+      
+      if (savedUser) {
+        setUser(savedUser);
+        console.log('✅ User data loaded from local storage');
+      }
+      
+      if (savedGoals) {
+        setGoals(savedGoals);
+        console.log('✅ Goals loaded from local storage');
+      }
+      
       // Seed the Indian food database
       await seedIndianFoods();
       console.log('✅ Indian food database seeded successfully');
-
+      
       // Load initial data
       await loadData();
       setIsLoading(false);
@@ -257,13 +277,45 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    // COMMENTED OUT FOR LOCAL DEVELOPMENT
-    // setUser(null);
-    // setAppState('landing');
-    // setDiaryEntries([]);
-    // setDailyTotals({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
-    // setGoals({ kcal: 2000, protein: 150, carbs: 250, fat: 65 });
-    console.log('Logout clicked (disabled for local development)');
+    // Clear local storage
+    LocalStorageService.clearAll();
+    
+    // Reset app state
+    setUser(null);
+    setAppState('landing');
+    setDiaryEntries([]);
+    setDailyTotals({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
+    setGoals({ kcal: 2000, protein: 150, carbs: 250, fat: 65 });
+    
+    console.log('✅ User logged out successfully');
+  };
+
+  const handleUpdateProfile = (updatedProfile: UserProfile) => {
+    // Update user state
+    setUser(updatedProfile);
+    
+    // Update goals based on new profile
+    setGoals({
+      kcal: updatedProfile.daily_targets.calories,
+      protein: updatedProfile.daily_targets.protein,
+      carbs: updatedProfile.daily_targets.carbs,
+      fat: updatedProfile.daily_targets.fat,
+    });
+    
+    // Save to local storage
+    LocalStorageService.saveUser(updatedProfile);
+    LocalStorageService.saveGoals({
+      kcal: updatedProfile.daily_targets.calories,
+      protein: updatedProfile.daily_targets.protein,
+      carbs: updatedProfile.daily_targets.carbs,
+      fat: updatedProfile.daily_targets.fat,
+    });
+    
+    console.log('✅ Profile updated successfully');
+  };
+
+  const handleProfileClick = () => {
+    setShowProfileModal(true);
   };
 
   // const handleProfileUpdate = (updatedProfile: UserProfile) => {
@@ -386,15 +438,15 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <AnimatedGradientHeader />
 
-      <ModernNavigation
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onOpenAdd={handleAddFood}
-        isAddOpen={isAddModalOpen}
-        onGenerateMealPlan={handleGenerateAIMealPlan}
-        user={user || undefined}
-        onLogout={handleLogout}
-      />
+             <ModernNavigation
+         activeTab={activeTab}
+         onTabChange={setActiveTab}
+         onOpenAdd={handleAddFood}
+         isAddOpen={isAddModalOpen}
+         onGenerateMealPlan={handleGenerateAIMealPlan}
+         user={user || undefined}
+         onLogout={handleProfileClick}
+       />
 
       <main className="flex-1 w-full container mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 max-w-7xl">
         {/* Diary Tab */}
@@ -954,8 +1006,19 @@ export default function App() {
               </div>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+                 )}
+
+         {/* User Profile Modal */}
+         {showProfileModal && user && (
+           <UserProfileModal
+             user={user}
+             isOpen={showProfileModal}
+             onClose={() => setShowProfileModal(false)}
+             onUpdateProfile={handleUpdateProfile}
+             onLogout={handleLogout}
+           />
+         )}
+       </AnimatePresence>
+     </div>
+   );
+ }
