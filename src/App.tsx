@@ -13,37 +13,90 @@ import Auth from './components/Auth';
 import Onboarding from './components/Onboarding';
 import { db } from './lib/db';
 import {
-  onAuthStateChange,
-  getUserProfile,
-  getCurrentUser,
-  syncUserProfileWithGoogle,
+  // onAuthStateChange,
+  // getUserProfile,
+  // getCurrentUser,
+  // syncUserProfileWithGoogle,
   type UserProfile,
 } from './lib/supabaseAuth';
 import type { Food, DiaryEntry } from './lib/db';
 import EnhancedShoppingListGenerator from './components/ui/EnhancedShoppingListGenerator';
 import EnhancedProgressCharts from './components/ui/EnhancedProgressCharts';
 import { IconTarget, IconBrain } from '@tabler/icons-react';
+import { generateMealIdeas } from './lib/ai';
 
 type AppState = 'landing' | 'auth' | 'onboarding' | 'main';
 
 export default function App() {
-  const [appState, setAppState] = useState<AppState>('landing');
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [appState, setAppState] = useState<AppState>('main'); // Changed from 'landing' to 'main' for local testing
+  const [user /* setUser */] = useState<UserProfile | null>({
+    id: 'local-dev',
+    email: 'dev@local.com',
+    display_name: 'Local Developer',
+    age: 25,
+    gender: 'male',
+    height: 170,
+    weight: 70,
+    bmi: 24.2,
+    goal: 'maintain',
+    daily_targets: {
+      calories: 2000,
+      protein: 150,
+      carbs: 250,
+      fat: 65,
+    },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+  const [isLoading, setIsLoading] = useState(false); // Changed from true to false
 
   const [activeTab, setActiveTab] = useState<'diary' | 'goals' | 'progress'>(
     'diary'
   );
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
-  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
+  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([
+    // Sample breakfast entry
+    {
+      id: 1,
+      date: new Date().toISOString().split('T')[0],
+      meal: 'breakfast',
+      foodId: 1,
+      customName: 'Oatmeal with Berries',
+      grams: 150,
+      quantity: 1,
+      servingLabel: 'bowl',
+    },
+    // Sample lunch entry
+    {
+      id: 2,
+      date: new Date().toISOString().split('T')[0],
+      meal: 'lunch',
+      foodId: 2,
+      customName: 'Grilled Chicken Salad',
+      grams: 200,
+      quantity: 1,
+      servingLabel: 'plate',
+    },
+    // Sample snack entry
+    {
+      id: 3,
+      date: new Date().toISOString().split('T')[0],
+      meal: 'snack',
+      foodId: 3,
+      customName: 'Greek Yogurt with Nuts',
+      grams: 100,
+      quantity: 1,
+      servingLabel: 'cup',
+    },
+  ]);
   const [dailyTotals, setDailyTotals] = useState({
-    kcal: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
+    kcal: 850,
+    protein: 45,
+    carbs: 95,
+    fat: 28,
   });
-  const [goals, setGoals] = useState({
+  const [goals /* setGoals */] = useState({
     kcal: 2000,
     protein: 150,
     carbs: 250,
@@ -52,9 +105,14 @@ export default function App() {
   const [showCustomFoodCreator, setShowCustomFoodCreator] = useState(false);
   const [showPlanner, setShowPlanner] = useState(false);
   const [showShoppingList, setShowShoppingList] = useState(false);
+  const [showAIMealPlan, setShowAIMealPlan] = useState(false);
+  const [isGeneratingAIMealPlan, setIsGeneratingAIMealPlan] = useState(false);
+  const [aiMealPlan, setAiMealPlan] = useState<string>('');
 
   useEffect(() => {
     // Check authentication state
+    // COMMENTED OUT FOR LOCAL DEVELOPMENT TESTING
+    /*
     const {
       data: { subscription },
     } = onAuthStateChange(async (supabaseUser) => {
@@ -86,6 +144,10 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
+    */
+
+    // For local development, skip authentication
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -156,41 +218,50 @@ export default function App() {
 
   const handleOnboardingComplete = () => {
     setAppState('main');
+    // COMMENTED OUT FOR LOCAL DEVELOPMENT
     // Reload user data - we'll need to get the current user from Supabase
-    getCurrentUser().then((currentUser) => {
-      if (currentUser) {
-        getUserProfile(currentUser.id).then((userProfile) => {
-          if (userProfile) {
-            setUser(userProfile);
-            setGoals({
-              kcal: userProfile.daily_targets.calories,
-              protein: userProfile.daily_targets.protein,
-              carbs: userProfile.daily_targets.carbs,
-              fat: userProfile.daily_targets.fat,
-            });
-          }
-        });
-      }
-    });
+    // getCurrentUser().then((currentUser) => {
+    //   if (currentUser) {
+    //     getUserProfile(currentUser.id).then((userProfile) => {
+    //       if (userProfile) {
+    //         setUser(userProfile);
+    //         setGoals({
+    //           kcal: userProfile.daily_targets.calories,
+    //           protein: userProfile.daily_targets.protein,
+    //           carbs: userProfile.daily_targets.carbs,
+    //           fat: userProfile.daily_targets.fat,
+    //           });
+    //         });
+    //       }
+    //     });
+    //   }
+    // });
   };
 
   const handleLogout = () => {
-    setUser(null);
-    setAppState('landing');
-    setDiaryEntries([]);
-    setDailyTotals({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
-    setGoals({ kcal: 2000, protein: 150, carbs: 250, fat: 65 });
+    // COMMENTED OUT FOR LOCAL DEVELOPMENT
+    // setUser(null);
+    // setAppState('landing');
+    // setDiaryEntries([]);
+    // setDailyTotals({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
+    // setGoals({ kcal: 2000, protein: 150, carbs: 250, fat: 65 });
+    console.log('Logout clicked (disabled for local development)');
   };
 
-  const handleProfileUpdate = (updatedProfile: UserProfile) => {
-    setUser(updatedProfile);
-    setGoals({
-      kcal: updatedProfile.daily_targets.calories,
-      protein: updatedProfile.daily_targets.protein,
-      carbs: updatedProfile.daily_targets.carbs,
-      fat: updatedProfile.daily_targets.fat,
-    });
-  };
+  // const handleProfileUpdate = (updatedProfile: UserProfile) => {
+  //   // COMMENTED OUT FOR LOCAL DEVELOPMENT
+  //   // setUser(updatedProfile);
+  //   // setGoals({
+  //   //   kcal: updatedProfile.daily_targets.calories,
+  //   //   protein: updatedProfile.daily_targets.protein,
+  //   //   carbs: updatedProfile.daily_targets.carbs,
+  //   //   fat: updatedProfile.daily_targets.fat,
+  //   // });
+  //   console.log(
+  //     'Profile update clicked (disabled for local development)',
+  //     updatedProfile
+  //   );
+  // };
 
   const handleCustomFoodCreated = async () => {
     setShowCustomFoodCreator(false);
@@ -199,6 +270,29 @@ export default function App() {
 
   const handleAddFood = () => {
     setIsAddModalOpen(true);
+  };
+
+  const handleGenerateAIMealPlan = async () => {
+    setShowAIMealPlan(true);
+    setIsGeneratingAIMealPlan(true);
+
+    try {
+      const prompt = `Create a personalized 7-day meal plan for someone with these daily nutrition goals:
+- Calories: ${goals.kcal} kcal
+- Protein: ${goals.protein}g
+- Carbs: ${goals.carbs}g
+- Fat: ${goals.fat}g
+
+Include breakfast, lunch, dinner, and 1-2 snacks per day. Focus on Indian cuisine and healthy options. Provide specific food items with approximate portions.`;
+
+      const aiResponse = await generateMealIdeas(prompt);
+      setAiMealPlan(aiResponse);
+    } catch (error) {
+      console.error('Error generating AI meal plan:', error);
+      setAiMealPlan('Failed to generate meal plan. Please try again.');
+    } finally {
+      setIsGeneratingAIMealPlan(false);
+    }
   };
 
   const handleFoodLogged = () => {
@@ -241,9 +335,9 @@ export default function App() {
         onTabChange={setActiveTab}
         onOpenAdd={handleAddFood}
         isAddOpen={isAddModalOpen}
+        onGenerateMealPlan={handleGenerateAIMealPlan}
         user={user || undefined}
         onLogout={handleLogout}
-        onProfileUpdate={handleProfileUpdate}
       />
 
       <main className="flex-1 w-full container mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 max-w-7xl">
@@ -294,24 +388,65 @@ export default function App() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <button
+              <motion.button
                 onClick={handleAddFood}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-colors shadow-sm hover:shadow-md text-sm sm:text-base"
+                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 text-base flex items-center justify-center gap-3"
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
               >
-                + Add Food
-              </button>
-              <button
+                <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                  <span className="text-white text-lg font-bold">+</span>
+                </div>
+                Add Food
+              </motion.button>
+
+              <motion.button
                 onClick={() => setShowPlanner(true)}
-                className="flex-1 bg-white border-2 border-orange-500 text-orange-600 hover:bg-orange-50 px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-colors shadow-sm hover:shadow-md text-sm sm:text-base"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 text-base flex items-center justify-center gap-3 border border-blue-400/30"
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
               >
+                <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-3 h-3 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
                 Meal Planner
-              </button>
-              <button
+              </motion.button>
+
+              <motion.button
                 onClick={() => setShowShoppingList(true)}
-                className="flex-1 bg-white border-2 border-mint-500 text-mint-600 hover:bg-mint-50 px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-colors shadow-sm hover:shadow-md text-sm sm:text-base"
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 text-base flex items-center justify-center gap-3 border border-emerald-400/30"
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
               >
+                <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-3 h-3 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"
+                    />
+                  </svg>
+                </div>
                 Shopping List
-              </button>
+              </motion.button>
             </div>
           </div>
         )}
@@ -661,6 +796,104 @@ export default function App() {
               <EnhancedShoppingListGenerator
                 onClose={() => setShowShoppingList(false)}
               />
+            </div>
+          </motion.div>
+        )}
+
+        {/* AI Meal Plan Modal */}
+        {showAIMealPlan && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-gradient-to-br from-marigold-50/80 via-white/80 to-mint-50/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowAIMealPlan(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto modal-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                      <IconBrain className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        AI-Generated Meal Plan
+                      </h2>
+                      <p className="text-gray-600">
+                        Personalized nutrition plan based on your goals
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowAIMealPlan(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <svg
+                      className="w-6 h-6 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {isGeneratingAIMealPlan ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-spin mx-auto mb-4 flex items-center justify-center">
+                      <IconBrain className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Generating Your Meal Plan
+                    </h3>
+                    <p className="text-gray-600">
+                      AI is creating a personalized nutrition plan...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200">
+                      <h3 className="text-lg font-semibold text-purple-800 mb-3">
+                        Your Personalized 7-Day Meal Plan
+                      </h3>
+                      <div className="prose prose-sm max-w-none">
+                        <pre className="whitespace-pre-wrap text-purple-700 font-mono text-sm leading-relaxed">
+                          {aiMealPlan}
+                        </pre>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={() => {
+                          setShowAIMealPlan(false);
+                          setShowPlanner(true);
+                        }}
+                        className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-600 hover:to-blue-600 transition-all flex items-center justify-center gap-2"
+                      >
+                        <IconTarget className="w-5 h-5" />
+                        Apply to Meal Planner
+                      </button>
+                      <button
+                        onClick={() => setShowAIMealPlan(false)}
+                        className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
