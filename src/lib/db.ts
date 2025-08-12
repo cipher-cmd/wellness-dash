@@ -84,8 +84,6 @@ export class WellnessDB extends Dexie {
 
   constructor() {
     super('wellnessdash');
-
-    // v3: Optimized schema with better indexing and caching
     this.version(3)
       .stores({
         foods: '++id,name,brand,tags,category,source,lastUpdated,searchCount',
@@ -96,7 +94,6 @@ export class WellnessDB extends Dexie {
         foodCache: '++id,query,timestamp,expiresAt',
       })
       .upgrade((tx) => {
-        // Add new fields to existing foods table
         return tx
           .table('foods')
           .toCollection()
@@ -231,6 +228,50 @@ export class WellnessDB extends Dexie {
     // Clean up expired cache entries
     await this.foodCache.where('expiresAt').below(now.toISOString()).delete();
   }
+
+  // Get popular foods based on search count
+  async getPopularFoods(limit: number = 10): Promise<Food[]> {
+    try {
+      return await this.foods
+        .orderBy('searchCount')
+        .reverse()
+        .limit(limit)
+        .toArray();
+    } catch (error) {
+      console.error('Failed to get popular foods:', error);
+      return [];
+    }
+  }
+
+  // Get foods by category
+  async getFoodsByCategory(
+    category: string,
+    limit: number = 20
+  ): Promise<Food[]> {
+    try {
+      return await this.foods
+        .where('category')
+        .equals(category)
+        .limit(limit)
+        .toArray();
+    } catch (error) {
+      console.error('Failed to get foods by category:', error);
+      return [];
+    }
+  }
+
+  // Batch add foods for better performance
+  async addFoods(foods: Omit<Food, 'id'>[]): Promise<number[]> {
+    try {
+      const ids = await this.foods.bulkAdd(foods);
+      console.log(`✅ Successfully added ${foods.length} foods`);
+      return Array.isArray(ids) ? ids : [ids];
+    } catch (error) {
+      console.error('❌ Error adding foods:', error);
+      throw error;
+    }
+  }
 }
 
+// Export database instance
 export const db = new WellnessDB();

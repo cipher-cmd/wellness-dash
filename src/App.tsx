@@ -23,7 +23,11 @@ import type { Food, DiaryEntry } from './lib/db';
 import EnhancedShoppingListGenerator from './components/ui/EnhancedShoppingListGenerator';
 import EnhancedProgressCharts from './components/ui/EnhancedProgressCharts';
 import { IconTarget, IconBrain } from '@tabler/icons-react';
-import { generateMealIdeas } from './lib/ai';
+import {
+  generatePersonalizedMealPlan,
+  type MealPlanningContext,
+} from './lib/ai';
+import { seedIndianFoods } from './lib/indianFoodDatabase';
 
 type AppState = 'landing' | 'auth' | 'onboarding' | 'main';
 
@@ -146,13 +150,27 @@ export default function App() {
     return () => subscription.unsubscribe();
     */
 
-    // For local development, skip authentication
-    setIsLoading(false);
+    // For local development, skip authentication and seed database
+    initializeApp();
   }, []);
+
+  const initializeApp = async () => {
+    try {
+      // Seed the Indian food database
+      await seedIndianFoods();
+      console.log('✅ Indian food database seeded successfully');
+
+      // Load initial data
+      await loadData();
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error initializing app:', error);
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (appState === 'main') {
-      loadData();
       const handler = () => {
         loadData();
       };
@@ -273,19 +291,57 @@ export default function App() {
   };
 
   const handleGenerateAIMealPlan = async () => {
+    if (!user) {
+      setAiMealPlan(
+        'User profile not available. Please complete your profile first.'
+      );
+      setShowAIMealPlan(true);
+      return;
+    }
+
     setShowAIMealPlan(true);
     setIsGeneratingAIMealPlan(true);
 
     try {
-      const prompt = `Create a personalized 7-day meal plan for someone with these daily nutrition goals:
-- Calories: ${goals.kcal} kcal
-- Protein: ${goals.protein}g
-- Carbs: ${goals.carbs}g
-- Fat: ${goals.fat}g
+      // Create comprehensive meal planning context
+      const mealPlanningContext: MealPlanningContext = {
+        userProfile: {
+          age: user.age,
+          gender: user.gender === 'other' ? 'male' : user.gender, // Handle 'other' gender case
+          height: user.height,
+          weight: user.weight,
+          bmi: user.bmi,
+          goal: user.goal,
+          activityLevel: 'moderately_active', // Default, can be made configurable
+        },
+        nutritionGoals: {
+          kcal: goals.kcal,
+          protein: goals.protein,
+          carbs: goals.carbs,
+          fat: goals.fat,
+        },
+        preferences: {
+          cuisine: 'indian',
+          dietaryRestrictions: [],
+          favoriteFoods: ['dal', 'roti', 'rice', 'vegetables'],
+          dislikedFoods: [],
+          mealTiming: {
+            breakfast: '8:00 AM',
+            lunch: '1:00 PM',
+            dinner: '8:00 PM',
+            snacks: ['11:00 AM', '4:00 PM'],
+          },
+        },
+        currentMeals: diaryEntries.map((entry) => ({
+          meal: entry.meal,
+          foods: [entry.customName || 'Unknown Food'],
+          calories: entry.grams ? entry.grams * 0.1 : 0, // Rough estimate
+        })),
+      };
 
-Include breakfast, lunch, dinner, and 1-2 snacks per day. Focus on Indian cuisine and healthy options. Provide specific food items with approximate portions.`;
-
-      const aiResponse = await generateMealIdeas(prompt);
+      const aiResponse = await generatePersonalizedMealPlan(
+        mealPlanningContext
+      );
       setAiMealPlan(aiResponse);
     } catch (error) {
       console.error('Error generating AI meal plan:', error);
@@ -824,7 +880,8 @@ Include breakfast, lunch, dinner, and 1-2 snacks per day. Focus on Indian cuisin
                         AI-Generated Meal Plan
                       </h2>
                       <p className="text-gray-600">
-                        Personalized nutrition plan based on your goals
+                        Personalized nutrition plan based on your goals, BMI,
+                        and preferences
                       </p>
                     </div>
                   </div>
@@ -854,17 +911,18 @@ Include breakfast, lunch, dinner, and 1-2 snacks per day. Focus on Indian cuisin
                       <IconBrain className="w-8 h-8 text-white" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Generating Your Meal Plan
+                      Generating Your Personalized Meal Plan
                     </h3>
                     <p className="text-gray-600">
-                      AI is creating a personalized nutrition plan...
+                      AI is analyzing your profile, goals, and preferences to
+                      create the perfect Indian meal plan...
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-6">
                     <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200">
                       <h3 className="text-lg font-semibold text-purple-800 mb-3">
-                        Your Personalized 7-Day Meal Plan
+                        Your Personalized 7-Day Indian Meal Plan
                       </h3>
                       <div className="prose prose-sm max-w-none">
                         <pre className="whitespace-pre-wrap text-purple-700 font-mono text-sm leading-relaxed">
