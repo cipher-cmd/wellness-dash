@@ -130,6 +130,7 @@ export default function ModernNavigation({
             {/* User Profile */}
             {user && onLogout && (
               <motion.button
+                onClick={onLogout}
                 className="px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 hover:text-gray-800 border border-gray-300 shadow-md hover:shadow-lg"
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
@@ -236,6 +237,7 @@ export default function ModernNavigation({
             {/* User Profile */}
             {user && onLogout && (
               <motion.button
+                onClick={onLogout}
                 className="px-8 py-4 rounded-2xl font-semibold text-base transition-all duration-200 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 hover:text-gray-800 border border-gray-300 shadow-md hover:shadow-lg"
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}

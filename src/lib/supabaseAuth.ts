@@ -13,6 +13,12 @@ export interface UserProfile {
   weight: number; // in kg
   goal: 'lose' | 'maintain' | 'gain';
   bmi: number;
+  activityLevel?:
+    | 'sedentary'
+    | 'lightly_active'
+    | 'moderately_active'
+    | 'very_active'
+    | 'extremely_active';
   daily_targets: {
     calories: number;
     protein: number;

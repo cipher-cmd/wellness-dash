@@ -1,3 +1,20 @@
+import type { UserProfile } from './supabaseAuth';
+
+// Define types for local storage data
+interface Goals {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+interface Preferences {
+  theme: 'light' | 'dark';
+  language: 'en';
+  notifications: boolean;
+  autoSave: boolean;
+}
+
 // Local Storage Service for persisting user data
 export class LocalStorageService {
   private static readonly USER_KEY = 'wellnessdash_user';
@@ -7,7 +24,7 @@ export class LocalStorageService {
   private static readonly FOODS_KEY = 'wellnessdash_foods';
 
   // User Profile Management
-  static saveUser(user: any): void {
+  static saveUser(user: UserProfile): void {
     try {
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
     } catch (error) {
@@ -15,7 +32,7 @@ export class LocalStorageService {
     }
   }
 
-  static getUser(): any | null {
+  static getUser(): UserProfile | null {
     try {
       const userData = localStorage.getItem(this.USER_KEY);
       return userData ? JSON.parse(userData) : null;
@@ -25,7 +42,7 @@ export class LocalStorageService {
     }
   }
 
-  static updateUser(updates: Partial<any>): void {
+  static updateUser(updates: Partial<UserProfile>): void {
     try {
       const currentUser = this.getUser();
       if (currentUser) {
@@ -46,7 +63,7 @@ export class LocalStorageService {
   }
 
   // Goals Management
-  static saveGoals(goals: any): void {
+  static saveGoals(goals: Goals): void {
     try {
       localStorage.setItem(this.GOALS_KEY, JSON.stringify(goals));
     } catch (error) {
@@ -54,7 +71,7 @@ export class LocalStorageService {
     }
   }
 
-  static getGoals(): any | null {
+  static getGoals(): Goals | null {
     try {
       const goalsData = localStorage.getItem(this.GOALS_KEY);
       return goalsData ? JSON.parse(goalsData) : null;
@@ -64,7 +81,7 @@ export class LocalStorageService {
     }
   }
 
-  static updateGoals(updates: Partial<any>): void {
+  static updateGoals(updates: Partial<Goals>): void {
     try {
       const currentGoals = this.getGoals();
       if (currentGoals) {
@@ -77,7 +94,7 @@ export class LocalStorageService {
   }
 
   // Preferences Management
-  static savePreferences(preferences: any): void {
+  static savePreferences(preferences: Preferences): void {
     try {
       localStorage.setItem(this.PREFERENCES_KEY, JSON.stringify(preferences));
     } catch (error) {
@@ -85,16 +102,17 @@ export class LocalStorageService {
     }
   }
 
-  static getPreferences(): any | null {
+  static getPreferences(): Preferences | null {
     try {
       const prefsData = localStorage.getItem(this.PREFERENCES_KEY);
       return prefsData ? JSON.parse(prefsData) : null;
     } catch (error) {
       console.error('Failed to get preferences from localStorage:', error);
+      return null;
     }
   }
 
-  static updatePreferences(updates: Partial<any>): void {
+  static updatePreferences(updates: Partial<Preferences>): void {
     try {
       const currentPrefs = this.getPreferences();
       if (currentPrefs) {
@@ -138,7 +156,7 @@ export class LocalStorageService {
   static updateDiaryEntry(id: number, updates: Partial<any>): void {
     try {
       const entries = this.getDiaryEntries();
-      const index = entries.findIndex(entry => entry.id === id);
+      const index = entries.findIndex((entry) => entry.id === id);
       if (index !== -1) {
         entries[index] = { ...entries[index], ...updates };
         this.saveDiaryEntries(entries);
@@ -151,7 +169,7 @@ export class LocalStorageService {
   static deleteDiaryEntry(id: number): void {
     try {
       const entries = this.getDiaryEntries();
-      const filteredEntries = entries.filter(entry => entry.id !== id);
+      const filteredEntries = entries.filter((entry) => entry.id !== id);
       this.saveDiaryEntries(filteredEntries);
     } catch (error) {
       console.error('Failed to delete diary entry from localStorage:', error);
@@ -209,10 +227,10 @@ export class LocalStorageService {
         this.GOALS_KEY,
         this.PREFERENCES_KEY,
         this.DIARY_KEY,
-        this.FOODS_KEY
+        this.FOODS_KEY,
       ];
 
-      keys.forEach(key => {
+      keys.forEach((key) => {
         const data = localStorage.getItem(key);
         if (data) {
           totalSize += new Blob([data]).size;
@@ -241,7 +259,7 @@ export class LocalStorageService {
         diary: this.getDiaryEntries(),
         foods: this.getFoods(),
         exportDate: new Date().toISOString(),
-        version: '1.0.0'
+        version: '1.0.0',
       };
     } catch (error) {
       console.error('Failed to export data:', error);
@@ -256,7 +274,7 @@ export class LocalStorageService {
       if (data.preferences) this.savePreferences(data.preferences);
       if (data.diary) this.saveDiaryEntries(data.diary);
       if (data.foods) this.saveFoods(data.foods);
-      
+
       console.log('✅ Data imported successfully');
       return true;
     } catch (error) {
@@ -281,7 +299,7 @@ export class LocalStorageService {
   static initializeDefaults(): void {
     try {
       if (!this.getUser()) {
-        const defaultUser = {
+        const defaultUser: UserProfile = {
           id: 'local-dev',
           email: 'dev@local.com',
           display_name: 'Local Developer',
@@ -291,6 +309,7 @@ export class LocalStorageService {
           weight: 70,
           bmi: 24.2,
           goal: 'maintain',
+          activityLevel: 'moderately_active',
           daily_targets: {
             calories: 2000,
             protein: 150,
@@ -314,7 +333,7 @@ export class LocalStorageService {
       }
 
       if (!this.getPreferences()) {
-        const defaultPreferences = {
+        const defaultPreferences: Preferences = {
           theme: 'light',
           language: 'en',
           notifications: true,

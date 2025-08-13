@@ -10,13 +10,14 @@ import CustomFoodCreator from './components/CustomFoodCreator';
 import EnhancedMealPlanner from './components/ui/EnhancedMealPlanner';
 import LandingPage from './components/LandingPage';
 import Auth from './components/Auth';
+import LocalAuth from './components/LocalAuth';
 import Onboarding from './components/Onboarding';
 import { db } from './lib/db';
 import {
-  // onAuthStateChange,
-  // getUserProfile,
-  // getCurrentUser,
-  // syncUserProfileWithGoogle,
+  onAuthStateChange,
+  getUserProfile,
+  syncUserProfileWithGoogle,
+  signOutUser,
   type UserProfile,
 } from './lib/supabaseAuth';
 import type { Food, DiaryEntry } from './lib/db';
@@ -34,27 +35,50 @@ import { LocalStorageService } from './lib/localStorage';
 type AppState = 'landing' | 'auth' | 'onboarding' | 'main';
 
 export default function App() {
-  const [appState, setAppState] = useState<AppState>('main'); // Changed from 'landing' to 'main' for local testing
-  const [user, setUser] = useState<UserProfile | null>({
-    id: 'local-dev',
-    email: 'dev@local.com',
-    display_name: 'Local Developer',
-    age: 25,
-    gender: 'male',
-    height: 170,
-    weight: 70,
-    bmi: 24.2,
-    goal: 'maintain',
-    daily_targets: {
-      calories: 2000,
-      protein: 150,
-      carbs: 250,
-      fat: 65,
-    },
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+  // Check if we're in local development mode
+  // Force local dev mode for testing - remove this line once working
+  const forceLocalDev = true;
+  const isLocalDev =
+    forceLocalDev ||
+    (import.meta.env.DEV && !import.meta.env.VITE_SUPABASE_URL);
+
+  // Debug logging
+  console.log('🔍 App Debug Info:', {
+    isDev: import.meta.env.DEV,
+    isLocalDev,
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+    hasSupabaseConfig: !!import.meta.env.VITE_SUPABASE_URL,
+    appState: isLocalDev ? 'main' : 'landing',
   });
-  const [isLoading, setIsLoading] = useState(false); // Changed from true to false
+
+  const [appState, setAppState] = useState<AppState>(
+    isLocalDev ? 'main' : 'landing'
+  );
+  const [user, setUser] = useState<UserProfile | null>(
+    isLocalDev
+      ? {
+          id: 'local-dev',
+          email: 'dev@local.com',
+          display_name: 'Local Developer',
+          age: 25,
+          gender: 'male',
+          height: 170,
+          weight: 70,
+          bmi: 24.2,
+          goal: 'maintain',
+          activityLevel: 'moderately_active',
+          daily_targets: {
+            calories: 2000,
+            protein: 150,
+            carbs: 250,
+            fat: 65,
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      : null
+  );
+  const [isLoading, setIsLoading] = useState(!isLocalDev);
 
   const [activeTab, setActiveTab] = useState<'diary' | 'goals' | 'progress'>(
     'diary'
@@ -117,9 +141,13 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
+    // Skip authentication in local development mode
+    if (isLocalDev) {
+      setIsLoading(false);
+      return;
+    }
+
     // Check authentication state
-    // COMMENTED OUT FOR LOCAL DEVELOPMENT TESTING
-    /*
     const {
       data: { subscription },
     } = onAuthStateChange(async (supabaseUser) => {
@@ -151,35 +179,38 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-    */
+  }, [isLocalDev]);
 
-    // For local development, skip authentication and seed database
-    initializeApp();
-  }, []);
+  // Initialize app data when user is authenticated
+  useEffect(() => {
+    if (isLocalDev || (user && appState === 'main')) {
+      initializeApp();
+    }
+  }, [user, appState, isLocalDev]);
 
-    const initializeApp = async () => {
+  const initializeApp = async () => {
     try {
       // Initialize local storage with defaults
       LocalStorageService.initializeDefaults();
-      
+
       // Load user data from local storage
       const savedUser = LocalStorageService.getUser();
       const savedGoals = LocalStorageService.getGoals();
-      
+
       if (savedUser) {
         setUser(savedUser);
         console.log('✅ User data loaded from local storage');
       }
-      
+
       if (savedGoals) {
         setGoals(savedGoals);
         console.log('✅ Goals loaded from local storage');
       }
-      
+
       // Seed the Indian food database
       await seedIndianFoods();
       console.log('✅ Indian food database seeded successfully');
-      
+
       // Load initial data
       await loadData();
       setIsLoading(false);
@@ -250,50 +281,51 @@ export default function App() {
   };
 
   const handleAuthSuccess = () => {
-    // Auth success will trigger the auth state change listener
-    // which will then determine if onboarding is needed
+    if (isLocalDev) {
+      // In local dev mode, directly go to main app
+      setAppState('main');
+    } else {
+      // Auth success will trigger the auth state change listener
+      // which will then determine if onboarding is needed
+    }
   };
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = (userProfile: UserProfile) => {
+    setUser(userProfile);
+    setGoals({
+      kcal: userProfile.daily_targets.calories,
+      protein: userProfile.daily_targets.protein,
+      carbs: userProfile.daily_targets.carbs,
+      fat: userProfile.daily_targets.fat,
+    });
     setAppState('main');
-    // COMMENTED OUT FOR LOCAL DEVELOPMENT
-    // Reload user data - we'll need to get the current user from Supabase
-    // getCurrentUser().then((currentUser) => {
-    //   if (currentUser) {
-    //     getUserProfile(currentUser.id).then((userProfile) => {
-    //       if (userProfile) {
-    //         setUser(userProfile);
-    //         setGoals({
-    //           kcal: userProfile.daily_targets.calories,
-    //           protein: userProfile.daily_targets.protein,
-    //           carbs: userProfile.daily_targets.carbs,
-    //           fat: userProfile.daily_targets.fat,
-    //           });
-    //         });
-    //       }
-    //     });
-    //   }
-    // });
   };
 
-  const handleLogout = () => {
-    // Clear local storage
-    LocalStorageService.clearAll();
-    
-    // Reset app state
-    setUser(null);
-    setAppState('landing');
-    setDiaryEntries([]);
-    setDailyTotals({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
-    setGoals({ kcal: 2000, protein: 150, carbs: 250, fat: 65 });
-    
-    console.log('✅ User logged out successfully');
+  const handleLogout = async () => {
+    try {
+      // Sign out from Supabase
+      await signOutUser();
+
+      // Clear local storage
+      LocalStorageService.clearAll();
+
+      // Reset app state
+      setUser(null);
+      setAppState('landing');
+      setDiaryEntries([]);
+      setDailyTotals({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
+      setGoals({ kcal: 2000, protein: 150, carbs: 250, fat: 65 });
+
+      console.log('✅ User logged out successfully');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const handleUpdateProfile = (updatedProfile: UserProfile) => {
     // Update user state
     setUser(updatedProfile);
-    
+
     // Update goals based on new profile
     setGoals({
       kcal: updatedProfile.daily_targets.calories,
@@ -301,7 +333,7 @@ export default function App() {
       carbs: updatedProfile.daily_targets.carbs,
       fat: updatedProfile.daily_targets.fat,
     });
-    
+
     // Save to local storage
     LocalStorageService.saveUser(updatedProfile);
     LocalStorageService.saveGoals({
@@ -310,7 +342,7 @@ export default function App() {
       carbs: updatedProfile.daily_targets.carbs,
       fat: updatedProfile.daily_targets.fat,
     });
-    
+
     console.log('✅ Profile updated successfully');
   };
 
@@ -426,6 +458,12 @@ export default function App() {
   }
 
   if (appState === 'auth') {
+    console.log('🔍 Auth State Debug:', { isLocalDev, appState });
+    if (isLocalDev) {
+      console.log('✅ Rendering LocalAuth component');
+      return <LocalAuth onSignInSuccess={handleAuthSuccess} />;
+    }
+    console.log('✅ Rendering regular Auth component');
     return <Auth onSignInSuccess={handleAuthSuccess} />;
   }
 
@@ -438,15 +476,15 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <AnimatedGradientHeader />
 
-             <ModernNavigation
-         activeTab={activeTab}
-         onTabChange={setActiveTab}
-         onOpenAdd={handleAddFood}
-         isAddOpen={isAddModalOpen}
-         onGenerateMealPlan={handleGenerateAIMealPlan}
-         user={user || undefined}
-         onLogout={handleProfileClick}
-       />
+      <ModernNavigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onOpenAdd={handleAddFood}
+        isAddOpen={isAddModalOpen}
+        onGenerateMealPlan={handleGenerateAIMealPlan}
+        user={user || undefined}
+        onLogout={handleProfileClick}
+      />
 
       <main className="flex-1 w-full container mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8 max-w-7xl">
         {/* Diary Tab */}
@@ -1006,19 +1044,19 @@ export default function App() {
               </div>
             </div>
           </motion.div>
-                 )}
+        )}
 
-         {/* User Profile Modal */}
-         {showProfileModal && user && (
-           <UserProfileModal
-             user={user}
-             isOpen={showProfileModal}
-             onClose={() => setShowProfileModal(false)}
-             onUpdateProfile={handleUpdateProfile}
-             onLogout={handleLogout}
-           />
-         )}
-       </AnimatePresence>
-     </div>
-   );
- }
+        {/* User Profile Modal */}
+        {showProfileModal && user && (
+          <UserProfileModal
+            user={user}
+            isOpen={showProfileModal}
+            onClose={() => setShowProfileModal(false)}
+            onUpdateProfile={handleUpdateProfile}
+            onLogout={handleLogout}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

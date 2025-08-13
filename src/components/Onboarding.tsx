@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { IconArrowLeft, IconArrowRight, IconCheck } from '@tabler/icons-react';
 import { createUserProfile, getCurrentUser } from '../lib/supabaseAuth';
 
+import type { UserProfile } from '../lib/supabaseAuth';
+
 interface OnboardingProps {
-  onComplete: () => void;
+  onComplete: (userProfile: UserProfile) => void;
 }
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
@@ -134,16 +136,38 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
       console.log('Profile data to submit:', profileData);
 
+      let userProfile: UserProfile | null = null;
+
       try {
-        await createUserProfile(currentUser, profileData);
+        userProfile = await createUserProfile(currentUser, profileData);
         console.log('Profile created successfully!');
       } catch (profileError) {
         console.warn('Profile creation failed, but continuing:', profileError);
         // Continue anyway - the user can still use the app
       }
 
-      // Call onComplete to close onboarding
-      onComplete();
+      // Create a local user profile if Supabase creation failed
+      if (!userProfile) {
+        userProfile = {
+          id: currentUser.id,
+          email: currentUser.email || '',
+          display_name: currentUser.user_metadata?.full_name || 'User',
+          avatar_url: currentUser.user_metadata?.avatar_url,
+          age: parseInt(formData.age),
+          gender: formData.gender,
+          height: parseInt(formData.height),
+          weight: parseInt(formData.weight),
+          goal: formData.goal,
+          bmi: calculatedData.bmi,
+          activityLevel: 'moderately_active',
+          daily_targets: calculatedData.dailyTargets,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+
+      // Call onComplete with the user profile
+      onComplete(userProfile);
     } catch (error) {
       console.error('Error creating profile:', error);
       alert(
