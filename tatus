@@ -1,20 +1,3 @@
-[33m9914bab[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Complete PWA removal and resolve merge conflicts
-[33mde78247[m Complete PWA removal
-[33m8c64cc0[m chore: fix rollup optional dep issue for VercelDelete package-lock.json
-[33m6404a94[m Pin rollup to stable version to fix Vercel build errorPin rollup to stable version to fix Vercel build errorUpdate package.json
-[33m7a19548[m fix: vercel config for Vite static deployUpdate vercel.json
-[33m9328057[m Fix Vercel deployment: Remove conflicting service worker and clean vercel.json
-[33m284f0f5[m vercel fix 4
-[33md8c163c[m vercel fix 3
-[33mede1b71[m Fix Vercel deployment issues
-[33md665e50[m vercel fix 2
-[33m9d46e87[m vercel fix
-[33m9ba65bf[m added some new features
-[33m0f60f2a[m Fixed bugs
-[33m6cce8ea[m  Fixed UI
-[33m8b0418b[m  Complete Web App
-[33mf3fb936[m  Major Performance & Feature Updated
-[33m7a31885[m fix for small screns also added some new featurs
-[33m92a2905[m Add comprehensive .gitignore file and remove .env from tracking
-[33m909db29[m Update environment configuration
-[33ma351b6d[m Update README.md
+[33m9465f35[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m CLEANUP: Remove unused components and fix misleading UI text
+[33mf0b6c35[m AGGRESSIVE FIX: Completely disable LocalStorage user operations in production to prevent Google profile override
+[33mff0beb8[m Add comprehensive debugging to track Google profile integration and local storage issues
