@@ -10,7 +10,7 @@ import CustomFoodCreator from './components/CustomFoodCreator';
 import EnhancedMealPlanner from './components/ui/EnhancedMealPlanner';
 import LandingPage from './components/LandingPage';
 import Auth from './components/Auth';
-import LocalAuth from './components/LocalAuth';
+
 import Onboarding from './components/Onboarding';
 import { db } from './lib/db';
 import {
@@ -36,11 +36,7 @@ type AppState = 'landing' | 'auth' | 'onboarding' | 'main';
 
 export default function App() {
   // Check if we're in local development mode
-  // Force local dev mode for testing - remove this line once working
-  const forceLocalDev = true;
-  const isLocalDev =
-    forceLocalDev ||
-    (import.meta.env.DEV && !import.meta.env.VITE_SUPABASE_URL);
+  const isLocalDev = import.meta.env.DEV && !import.meta.env.VITE_SUPABASE_URL;
 
   // Debug logging
   console.log('🔍 App Debug Info:', {
@@ -48,37 +44,12 @@ export default function App() {
     isLocalDev,
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
     hasSupabaseConfig: !!import.meta.env.VITE_SUPABASE_URL,
-    appState: isLocalDev ? 'main' : 'landing',
+    appState: 'landing',
   });
 
-  const [appState, setAppState] = useState<AppState>(
-    isLocalDev ? 'main' : 'landing'
-  );
-  const [user, setUser] = useState<UserProfile | null>(
-    isLocalDev
-      ? {
-          id: 'local-dev',
-          email: 'dev@local.com',
-          display_name: 'Local Developer',
-          age: 25,
-          gender: 'male',
-          height: 170,
-          weight: 70,
-          bmi: 24.2,
-          goal: 'maintain',
-          activityLevel: 'moderately_active',
-          daily_targets: {
-            calories: 2000,
-            protein: 150,
-            carbs: 250,
-            fat: 65,
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-      : null
-  );
-  const [isLoading, setIsLoading] = useState(!isLocalDev);
+  const [appState, setAppState] = useState<AppState>('landing');
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState<'diary' | 'goals' | 'progress'>(
     'diary'
@@ -141,12 +112,6 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
-    // Skip authentication in local development mode
-    if (isLocalDev) {
-      setIsLoading(false);
-      return;
-    }
-
     // Check authentication state
     const {
       data: { subscription },
@@ -179,14 +144,14 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [isLocalDev]);
+  }, []);
 
   // Initialize app data when user is authenticated
   useEffect(() => {
-    if (isLocalDev || (user && appState === 'main')) {
+    if (user && appState === 'main') {
       initializeApp();
     }
-  }, [user, appState, isLocalDev]);
+  }, [user, appState]);
 
   const initializeApp = async () => {
     try {
@@ -281,13 +246,8 @@ export default function App() {
   };
 
   const handleAuthSuccess = () => {
-    if (isLocalDev) {
-      // In local dev mode, directly go to main app
-      setAppState('main');
-    } else {
-      // Auth success will trigger the auth state change listener
-      // which will then determine if onboarding is needed
-    }
+    // Auth success will trigger the auth state change listener
+    // which will then determine if onboarding is needed
   };
 
   const handleOnboardingComplete = (userProfile: UserProfile) => {
@@ -459,10 +419,6 @@ export default function App() {
 
   if (appState === 'auth') {
     console.log('🔍 Auth State Debug:', { isLocalDev, appState });
-    if (isLocalDev) {
-      console.log('✅ Rendering LocalAuth component');
-      return <LocalAuth onSignInSuccess={handleAuthSuccess} />;
-    }
     console.log('✅ Rendering regular Auth component');
     return <Auth onSignInSuccess={handleAuthSuccess} />;
   }
