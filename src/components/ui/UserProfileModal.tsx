@@ -8,8 +8,10 @@ import {
   IconX,
   IconDeviceFloppy,
   IconEdit,
+  IconScale,
 } from '@tabler/icons-react';
 import type { UserProfile } from '../../lib/supabaseAuth';
+import WeightTrackingModal from '../WeightTrackingModal';
 
 interface UserProfileModalProps {
   user: UserProfile;
@@ -32,6 +34,7 @@ export default function UserProfileModal({
     'profile' | 'goals' | 'preferences'
   >('profile');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showWeightTracking, setShowWeightTracking] = useState(false);
 
   useEffect(() => {
     setEditedProfile(user);
@@ -72,7 +75,7 @@ export default function UserProfileModal({
     setIsEditing(false);
   };
 
-  const updateField = (field: keyof UserProfile, value: any) => {
+  const updateField = (field: keyof UserProfile, value: string | number) => {
     setEditedProfile((prev) => ({
       ...prev,
       [field]: value,
@@ -199,7 +202,11 @@ export default function UserProfileModal({
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() =>
+                      setActiveTab(
+                        tab.id as 'profile' | 'goals' | 'preferences'
+                      )
+                    }
                     className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 transition-all ${
                       isActive
                         ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
@@ -223,15 +230,26 @@ export default function UserProfileModal({
                   <h3 className="text-xl font-semibold text-gray-900">
                     Personal Information
                   </h3>
-                  {!isEditing && (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                    >
-                      <IconEdit className="w-4 h-4" />
-                      Edit
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    {!isEditing && (
+                      <>
+                        <button
+                          onClick={() => setShowWeightTracking(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                        >
+                          <IconScale className="w-4 h-4" />
+                          Track Weight
+                        </button>
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                        >
+                          <IconEdit className="w-4 h-4" />
+                          Edit
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -620,6 +638,19 @@ export default function UserProfileModal({
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Weight Tracking Modal */}
+      <WeightTrackingModal
+        isOpen={showWeightTracking}
+        onClose={() => setShowWeightTracking(false)}
+        userId={user.id}
+        currentWeight={user.weight}
+        onWeightUpdate={(newWeight) => {
+          // Update the user profile with new weight
+          const updatedProfile = { ...user, weight: newWeight };
+          onUpdateProfile(updatedProfile);
+        }}
+      />
     </AnimatePresence>
   );
 }

@@ -74,6 +74,8 @@ export const getCurrentUser = async (): Promise<User | null> => {
 // Sync user profile with Google OAuth data
 export const syncUserProfileWithGoogle = async (user: User) => {
   try {
+    console.log('🔍 Syncing Google profile data:', user.user_metadata);
+
     // Check if user profile exists
     const existingProfile = await getUserProfile(user.id);
 
@@ -86,6 +88,10 @@ export const syncUserProfileWithGoogle = async (user: User) => {
         user.user_metadata.full_name !== existingProfile.display_name
       ) {
         updates.display_name = user.user_metadata.full_name;
+        console.log(
+          '📝 Updating display name to:',
+          user.user_metadata.full_name
+        );
       }
 
       if (
@@ -93,16 +99,44 @@ export const syncUserProfileWithGoogle = async (user: User) => {
         user.user_metadata.avatar_url !== existingProfile.avatar_url
       ) {
         updates.avatar_url = user.user_metadata.avatar_url;
+        console.log(
+          '🖼️ Updating avatar URL to:',
+          user.user_metadata.avatar_url
+        );
       }
 
       if (Object.keys(updates).length > 0) {
-        await updateUserProfile(user.id, updates);
+        const updatedProfile = await updateUserProfile(user.id, updates);
+        console.log('✅ Profile updated successfully:', updatedProfile);
+        return updatedProfile;
       }
+    } else {
+      // Create new profile with Google data if none exists
+      console.log('🆕 Creating new profile with Google data');
+      const newProfileData = {
+        age: 25, // Default age, user can update
+        gender: 'other' as const, // Default gender, user can update
+        height: 170, // Default height, user can update
+        weight: 70, // Default weight, user can update
+        goal: 'maintain' as const, // Default goal, user can update
+        bmi: 24.2, // Calculated from default height/weight
+        activityLevel: 'moderately_active' as const,
+        daily_targets: {
+          calories: 2000,
+          protein: 150,
+          carbs: 250,
+          fat: 65,
+        },
+      };
+
+      const newProfile = await createUserProfile(user, newProfileData);
+      console.log('✅ New profile created:', newProfile);
+      return newProfile;
     }
 
     return existingProfile;
   } catch (error) {
-    console.error('Error syncing user profile with Google:', error);
+    console.error('❌ Error syncing user profile with Google:', error);
     return null;
   }
 };
