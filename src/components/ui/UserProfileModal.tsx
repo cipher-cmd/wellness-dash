@@ -160,7 +160,9 @@ export default function UserProfileModal({
                       }}
                     />
                   ) : null}
-                  <IconUser className={`w-8 h-8 ${user.avatar_url ? 'hidden' : ''}`} />
+                  <IconUser
+                    className={`w-8 h-8 ${user.avatar_url ? 'hidden' : ''}`}
+                  />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold">{user.display_name}</h2>

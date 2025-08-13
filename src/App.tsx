@@ -290,8 +290,8 @@ export default function App() {
       fat: updatedProfile.daily_targets.fat,
     });
 
-    // Save to local storage
-    LocalStorageService.saveUser(updatedProfile);
+    // Don't save user to local storage - keep Google profile data
+    // Only save goals to local storage
     LocalStorageService.saveGoals({
       kcal: updatedProfile.daily_targets.calories,
       protein: updatedProfile.daily_targets.protein,
