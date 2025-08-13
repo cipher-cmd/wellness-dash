@@ -146,8 +146,21 @@ export default function UserProfileModal({
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                  <IconUser className="w-8 h-8" />
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.display_name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to icon if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <IconUser className={`w-8 h-8 ${user.avatar_url ? 'hidden' : ''}`} />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold">{user.display_name}</h2>

@@ -75,9 +75,12 @@ export const getCurrentUser = async (): Promise<User | null> => {
 export const syncUserProfileWithGoogle = async (user: User) => {
   try {
     console.log('🔍 Syncing Google profile data:', user.user_metadata);
+    console.log('🔍 User email:', user.email);
+    console.log('🔍 User ID:', user.id);
 
     // Check if user profile exists
     const existingProfile = await getUserProfile(user.id);
+    console.log('🔍 Existing profile:', existingProfile);
 
     if (existingProfile) {
       // Update existing profile with latest Google data
@@ -106,9 +109,12 @@ export const syncUserProfileWithGoogle = async (user: User) => {
       }
 
       if (Object.keys(updates).length > 0) {
+        console.log('🔄 Applying updates:', updates);
         const updatedProfile = await updateUserProfile(user.id, updates);
         console.log('✅ Profile updated successfully:', updatedProfile);
         return updatedProfile;
+      } else {
+        console.log('ℹ️ No updates needed');
       }
     } else {
       // Create new profile with Google data if none exists

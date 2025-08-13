@@ -158,18 +158,14 @@ export default function App() {
       // Initialize local storage with defaults
       LocalStorageService.initializeDefaults();
 
-      // Load user data from local storage
-      const savedUser = LocalStorageService.getUser();
-      const savedGoals = LocalStorageService.getGoals();
-
-      if (savedUser) {
-        setUser(savedUser);
-        console.log('✅ User data loaded from local storage');
-      }
-
-      if (savedGoals) {
-        setGoals(savedGoals);
-        console.log('✅ Goals loaded from local storage');
+      // Don't override user data from Google - keep the real profile
+      // Only load goals from local storage if not already set
+      if (!goals.kcal) {
+        const savedGoals = LocalStorageService.getGoals();
+        if (savedGoals) {
+          setGoals(savedGoals);
+          console.log('✅ Goals loaded from local storage');
+        }
       }
 
       // Seed the Indian food database
