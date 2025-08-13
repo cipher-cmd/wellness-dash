@@ -116,8 +116,11 @@ export default function App() {
     const {
       data: { subscription },
     } = onAuthStateChange(async (supabaseUser) => {
-      console.log('🔐 Auth state change triggered:', { supabaseUser: !!supabaseUser, userId: supabaseUser?.id });
-      
+      console.log('🔐 Auth state change triggered:', {
+        supabaseUser: !!supabaseUser,
+        userId: supabaseUser?.id,
+      });
+
       if (supabaseUser) {
         console.log('🔐 User is signed in, starting Google profile sync...');
         // User is signed in - sync their Google profile data first
@@ -127,9 +130,12 @@ export default function App() {
         console.log('🔐 Getting user profile from Supabase...');
         const userProfile = await getUserProfile(supabaseUser.id);
         console.log('🔐 User profile from Supabase:', userProfile);
-        
+
         if (userProfile) {
-          console.log('🔐 Setting user state with Supabase profile:', userProfile.display_name);
+          console.log(
+            '🔐 Setting user state with Supabase profile:',
+            userProfile.display_name
+          );
           setUser(userProfile);
           setGoals({
             kcal: userProfile.daily_targets.calories,
@@ -164,10 +170,7 @@ export default function App() {
 
   const initializeApp = async () => {
     try {
-      // Initialize local storage with defaults
-      LocalStorageService.initializeDefaults();
-
-      // Don't override user data from Google - keep the real profile
+      // Don't initialize local storage defaults in production - it overrides Google profile data
       // Only load goals from local storage if not already set
       if (!goals.kcal) {
         const savedGoals = LocalStorageService.getGoals();

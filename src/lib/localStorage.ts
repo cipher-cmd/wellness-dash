@@ -23,8 +23,14 @@ export class LocalStorageService {
   private static readonly DIARY_KEY = 'wellnessdash_diary';
   private static readonly FOODS_KEY = 'wellnessdash_foods';
 
-  // User Profile Management
+  // User Management
   static saveUser(user: UserProfile): void {
+    // Don't save user data to local storage in production
+    if (import.meta.env.PROD) {
+      console.log('🔧 LocalStorageService.saveUser() blocked in production');
+      return;
+    }
+    
     try {
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
     } catch (error) {
@@ -33,6 +39,12 @@ export class LocalStorageService {
   }
 
   static getUser(): UserProfile | null {
+    // Don't load user data from local storage in production
+    if (import.meta.env.PROD) {
+      console.log('🔧 LocalStorageService.getUser() blocked in production');
+      return null;
+    }
+    
     try {
       const userData = localStorage.getItem(this.USER_KEY);
       return userData ? JSON.parse(userData) : null;
@@ -43,6 +55,12 @@ export class LocalStorageService {
   }
 
   static updateUser(updates: Partial<UserProfile>): void {
+    // Don't update user data in local storage in production
+    if (import.meta.env.PROD) {
+      console.log('🔧 LocalStorageService.updateUser() blocked in production');
+      return;
+    }
+    
     try {
       const currentUser = this.getUser();
       if (currentUser) {
@@ -55,6 +73,12 @@ export class LocalStorageService {
   }
 
   static clearUser(): void {
+    // Don't clear user data from local storage in production
+    if (import.meta.env.PROD) {
+      console.log('🔧 LocalStorageService.clearUser() blocked in production');
+      return;
+    }
+    
     try {
       localStorage.removeItem(this.USER_KEY);
     } catch (error) {
@@ -297,14 +321,20 @@ export class LocalStorageService {
 
   // Initialize default data if none exists
   static initializeDefaults(): void {
+    // Completely disabled in production to prevent interference with Google profiles
+    if (import.meta.env.PROD) {
+      console.log('🔧 LocalStorageService.initializeDefaults() blocked in production');
+      return;
+    }
+    
     try {
       console.log('🔧 LocalStorageService.initializeDefaults() called');
-      console.log('🔧 Environment check:', { 
-        isDev: import.meta.env.DEV, 
+      console.log('🔧 Environment check:', {
+        isDev: import.meta.env.DEV,
         isProd: import.meta.env.PROD,
-        mode: import.meta.env.MODE 
+        mode: import.meta.env.MODE,
       });
-      
+
       // Only create default user in development environment
       // In production, users should come from Google auth
       if (import.meta.env.DEV && !this.getUser()) {
@@ -332,9 +362,9 @@ export class LocalStorageService {
         this.saveUser(defaultUser);
         console.log('✅ Default user created (development only)');
       } else {
-        console.log('🔧 Skipping default user creation:', { 
-          isDev: import.meta.env.DEV, 
-          hasUser: !!this.getUser() 
+        console.log('🔧 Skipping default user creation:', {
+          isDev: import.meta.env.DEV,
+          hasUser: !!this.getUser(),
         });
       }
 
