@@ -298,9 +298,17 @@ export class LocalStorageService {
   // Initialize default data if none exists
   static initializeDefaults(): void {
     try {
+      console.log('🔧 LocalStorageService.initializeDefaults() called');
+      console.log('🔧 Environment check:', { 
+        isDev: import.meta.env.DEV, 
+        isProd: import.meta.env.PROD,
+        mode: import.meta.env.MODE 
+      });
+      
       // Only create default user in development environment
       // In production, users should come from Google auth
       if (import.meta.env.DEV && !this.getUser()) {
+        console.log('🔧 Creating default user (development mode)');
         const defaultUser: UserProfile = {
           id: 'local-dev',
           email: 'dev@local.com',
@@ -323,6 +331,11 @@ export class LocalStorageService {
         };
         this.saveUser(defaultUser);
         console.log('✅ Default user created (development only)');
+      } else {
+        console.log('🔧 Skipping default user creation:', { 
+          isDev: import.meta.env.DEV, 
+          hasUser: !!this.getUser() 
+        });
       }
 
       if (!this.getGoals()) {

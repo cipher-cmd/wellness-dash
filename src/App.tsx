@@ -116,13 +116,20 @@ export default function App() {
     const {
       data: { subscription },
     } = onAuthStateChange(async (supabaseUser) => {
+      console.log('🔐 Auth state change triggered:', { supabaseUser: !!supabaseUser, userId: supabaseUser?.id });
+      
       if (supabaseUser) {
+        console.log('🔐 User is signed in, starting Google profile sync...');
         // User is signed in - sync their Google profile data first
         await syncUserProfileWithGoogle(supabaseUser);
 
         // Then get the updated profile
+        console.log('🔐 Getting user profile from Supabase...');
         const userProfile = await getUserProfile(supabaseUser.id);
+        console.log('🔐 User profile from Supabase:', userProfile);
+        
         if (userProfile) {
+          console.log('🔐 Setting user state with Supabase profile:', userProfile.display_name);
           setUser(userProfile);
           setGoals({
             kcal: userProfile.daily_targets.calories,
@@ -132,10 +139,12 @@ export default function App() {
           });
           setAppState('main');
         } else {
+          console.log('🔐 No profile found, needs onboarding');
           // User exists but no profile - needs onboarding
           setAppState('onboarding');
         }
       } else {
+        console.log('🔐 User is signed out');
         // User is signed out
         setUser(null);
         setAppState('landing');
