@@ -640,12 +640,6 @@ export default function UserProfileModal({
                   <div className="text-sm text-gray-600 space-y-1">
                     <p>Version: 1.0.0</p>
                     <p>Last Updated: {new Date().toLocaleDateString()}</p>
-                    <p>
-                      Database:{' '}
-                      {user.id === 'local-dev'
-                        ? 'Local Development'
-                        : 'Production'}
-                    </p>
                   </div>
                 </div>
               </div>

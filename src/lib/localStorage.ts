@@ -30,7 +30,7 @@ export class LocalStorageService {
       console.log('🔧 LocalStorageService.saveUser() blocked in production');
       return;
     }
-    
+
     try {
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
     } catch (error) {
@@ -44,7 +44,7 @@ export class LocalStorageService {
       console.log('🔧 LocalStorageService.getUser() blocked in production');
       return null;
     }
-    
+
     try {
       const userData = localStorage.getItem(this.USER_KEY);
       return userData ? JSON.parse(userData) : null;
@@ -60,7 +60,7 @@ export class LocalStorageService {
       console.log('🔧 LocalStorageService.updateUser() blocked in production');
       return;
     }
-    
+
     try {
       const currentUser = this.getUser();
       if (currentUser) {
@@ -78,7 +78,7 @@ export class LocalStorageService {
       console.log('🔧 LocalStorageService.clearUser() blocked in production');
       return;
     }
-    
+
     try {
       localStorage.removeItem(this.USER_KEY);
     } catch (error) {
@@ -323,10 +323,12 @@ export class LocalStorageService {
   static initializeDefaults(): void {
     // Completely disabled in production to prevent interference with Google profiles
     if (import.meta.env.PROD) {
-      console.log('🔧 LocalStorageService.initializeDefaults() blocked in production');
+      console.log(
+        '🔧 LocalStorageService.initializeDefaults() blocked in production'
+      );
       return;
     }
-    
+
     try {
       console.log('🔧 LocalStorageService.initializeDefaults() called');
       console.log('🔧 Environment check:', {
