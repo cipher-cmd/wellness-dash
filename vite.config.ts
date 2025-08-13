@@ -79,6 +79,7 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1000,
+    target: 'es2015', // Better compatibility
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'framer-motion'],
